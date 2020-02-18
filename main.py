@@ -1,4 +1,5 @@
 import serial
+import time
 import switch_bot
 import queue
 import threading
@@ -51,6 +52,7 @@ class RemoteSwitch:
                     self.ser.readline().decode("ASCII")
                 )
             )
+            time.sleep(0.1)
 
     def _switch(self, addr, command):
         switch_bot.operate(10, addr, command)
@@ -66,24 +68,27 @@ class RemoteSwitch:
                     self.ser.readline().decode("ASCII")
                 )
             )
+            time.sleep(0.1) 
         while self.alive:
             if (self.data_lis[0] < -15 and self.data_lis[1] > 15) or (self.data_lis[0] < -15 and self.data_lis[1] < 15):
                 print("off")
-                a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "off"))
+                # a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "off"))
                 b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "off"))
-                a.start()
+                # a.start()
                 b.start()
-                a.join()
+                # a.join()
                 b.join()
+                time.sleep(2)
                 self._reset()
             elif (self.data_lis[0] > 15 and self.data_lis[1] < -15) or self.data_lis[0] > 15 and self.data_lis[1] > -15:
                 print("on")
-                a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "on"))
+                # a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "on"))
                 b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "on"))
-                a.start()
+                # a.start()
                 b.start()
-                a.join()
+                # a.join()
                 b.join()
+                time.sleep(2)
                 self._reset()
             else:
                 self._refresh_data()
@@ -93,5 +98,5 @@ class RemoteSwitch:
 
 
 if __name__ == "__main__":
-    con = RemoteSwitch(port=9600, path="/dev/ttyUSB0", limit_count=1)
+    con = RemoteSwitch(port=9600, path="/dev/ttyUSB0", limit_count=-1)
     con.start()
