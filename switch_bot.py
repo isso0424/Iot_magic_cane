@@ -29,7 +29,7 @@ class Driver(object):
         self._connect()
         return self
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.req.disconnect()
 
     def run_command(self, command):

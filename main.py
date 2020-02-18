@@ -1,5 +1,6 @@
 import serial
 import switch_bot
+import queue
 import threading
 
 
@@ -17,8 +18,7 @@ class RemoteSwitch:
         self.ser = serial.Serial(path, port)
         self.data_lis = []
         self.limit_count = limit_count
-        self.control_thread = threading.Thread(target=self._control())
-        self.thread_alive = False
+        self.alive = True
 
     def __enter__(self):
         return self
@@ -43,7 +43,7 @@ class RemoteSwitch:
         """
         self.limit_count -= 1
         if self.limit_count == 0:
-            self.thread_alive = False
+            self.alive = False
         self.data_lis = []
         for i in range(2):
             self.data_lis.append(
@@ -51,6 +51,9 @@ class RemoteSwitch:
                     self.ser.readline().decode("ASCII")
                 )
             )
+
+    def _switch(self, addr, command):
+        switch_bot.operate(10, addr, command)
 
     def _control(self):
         """
@@ -63,45 +66,32 @@ class RemoteSwitch:
                     self.ser.readline().decode("ASCII")
                 )
             )
-
-        while self.thread_alive:
-            if self.data_lis[0] < -10 and self.data_lis[1] > 10:
+        while self.alive:
+            if (self.data_lis[0] < -15 and self.data_lis[1] > 15) or (self.data_lis[0] < -15 and self.data_lis[1] < 15):
                 print("off")
-                switch_bot.operate(10, "FC:5B:2F:10:D7:82", "off")
+                a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "off"))
+                b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "off"))
+                a.start()
+                b.start()
+                a.join()
+                b.join()
                 self._reset()
-            elif self.data_lis[0] > 10 and self.data_lis[1] < -10:
+            elif (self.data_lis[0] > 15 and self.data_lis[1] < -15) or self.data_lis[0] > 15 and self.data_lis[1] > -15:
                 print("on")
-                switch_bot.operate(10, "FC:5B:2F:10:D7:82", "on")
-                self._reset()
-            elif self.data_lis[0] < -10 and self.data_lis[1] < 10:
-                print("off")
-                switch_bot.operate(10, "FC:5B:2F:10:D7:82", "off")
-                self._reset()
-            elif self.data_lis[0] > 10 and self.data_lis[1] > -10:
-                print("on")
-                switch_bot.operate(10, "FC:5B:2F:10:D7:82", "on")
+                a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "on"))
+                b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "on"))
+                a.start()
+                b.start()
+                a.join()
+                b.join()
                 self._reset()
             else:
                 self._refresh_data()
 
     def start(self):
-        if self.thread_alive:
-            RuntimeError("This class can run only one thread per one instance.")
-        self.thread_alive = True
-        self.control_thread.start()
-
-    def kill(self):
-        if not self.thread_alive:
-            RuntimeError("This instance dont have running thread.")
-        self.thread_alive = False
-        self.control_thread.join()
-
-    def wait_finish(self):
-        if not self.thread_alive:
-            RuntimeError("This instance dont have running thread.")
-        self.control_thread.join()
+        self._control()
 
 
 if __name__ == "__main__":
-    con = RemoteSwitch(port=9600, path="/dev/ttyUSB0", limit_count=3)
+    con = RemoteSwitch(port=9600, path="/dev/ttyUSB0", limit_count=1)
     con.start()
