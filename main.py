@@ -72,22 +72,12 @@ class RemoteSwitch:
         while self.alive:
             if (self.data_lis[0] < -15 and self.data_lis[1] > 15) or (self.data_lis[0] < -15 and self.data_lis[1] < 15):
                 print("off")
-                # a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "off"))
-                b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "off"))
-                # a.start()
-                b.start()
-                # a.join()
-                b.join()
+                self._switch("CF:13:80:93:9E:03", "off")
                 time.sleep(2)
                 self._reset()
             elif (self.data_lis[0] > 15 and self.data_lis[1] < -15) or self.data_lis[0] > 15 and self.data_lis[1] > -15:
                 print("on")
-                # a = threading.Thread(target=self._switch, args=("FC:5B:2F:10:D7:82", "on"))
-                b = threading.Thread(target=self._switch, args=("CF:13:80:93:9E:03", "on"))
-                # a.start()
-                b.start()
-                # a.join()
-                b.join()
+                self._switch("CF:13:80:93:9E:03", "on")
                 time.sleep(2)
                 self._reset()
             else:
