@@ -1,8 +1,10 @@
 import serial
 import time
 import switch_bot
-import queue
-import threading
+
+
+def _switch(addr, command):
+    switch_bot.operate(10, addr, command)
 
 
 class RemoteSwitch:
@@ -54,9 +56,6 @@ class RemoteSwitch:
             )
             time.sleep(0.1)
 
-    def _switch(self, addr, command):
-        switch_bot.operate(10, addr, command)
-
     def _control(self):
         """
         Switch Botを動かすメインの関数
@@ -68,18 +67,21 @@ class RemoteSwitch:
                     self.ser.readline().decode("ASCII")
                 )
             )
-            time.sleep(0.1) 
+            time.sleep(0.1)
+
         while self.alive:
             if (self.data_lis[0] < -15 and self.data_lis[1] > 15) or (self.data_lis[0] < -15 and self.data_lis[1] < 15):
                 print("off")
-                self._switch("CF:13:80:93:9E:03", "off")
+                _switch("CF:13:80:93:9E:03", "off")
                 time.sleep(2)
                 self._reset()
+
             elif (self.data_lis[0] > 15 and self.data_lis[1] < -15) or self.data_lis[0] > 15 and self.data_lis[1] > -15:
                 print("on")
-                self._switch("CF:13:80:93:9E:03", "on")
+                _switch("CF:13:80:93:9E:03", "on")
                 time.sleep(2)
                 self._reset()
+
             else:
                 self._refresh_data()
 
